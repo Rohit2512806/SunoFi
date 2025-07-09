@@ -133,6 +133,6 @@ app.get('/admin', (req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Admin Panel available at http://localhost:${PORT}/admin`);
+    console.log(`Server running on https://sunofi.onrender.com:${PORT}`);
+    console.log(`Admin Panel available at https://sunofi.onrender.com:${PORT}/admin`);
 });
