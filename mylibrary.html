@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Player - My Library</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Containers for different pages */
+        .page-content-container,
+        #searchResultsContainer,
+        .player-container,
+        .song-list-container,
+        #artistsContainer,
+        #selectedArtistSongs {
+            background-color: #282828;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 90%;
+            max-width: 100%;
+            margin-top: 10px;
+            flex-grow: 1;
+            box-sizing: border-box; /* Ensures padding doesn't increase total width */
+        }
+
+        /* Specific for Player & Song List (Home page) */
+        .player-container, .song-list-container {
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out, max-height 0.5s ease-out;
+        }
+        .player-container {
+            margin-bottom: 20px;
+        }
+
+        h1, h2 {
+            color: #1ed760;
+            margin-bottom: 25px;
+            font-size: 1.5em;
+        }
+
+        .input-section {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .button { /* Universal button style */
+            padding: 12px 25px;
+            background-color: #1db954;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .button:hover {
+            background-color: #1ed760;
+            transform: translateY(-2px);
+        }
+
+        .button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .media-display {
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            min-height: 0;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.6);
+            margin-bottom: 0;
+            transition: max-height 0.5s ease-out, opacity 0.5s ease-out, margin-bottom 0.5s ease-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .media-display.active {
+            opacity: 1;
+            margin-bottom: 30px;
+        }
+
+        .media-display iframe {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+        }
+
+        .placeholder-text {
+            color: #999;
+            font-size: 1.1em;
+            padding: 20px;
+            position: absolute;
+        }
+        .media-display.active .placeholder-text {
+            display: none;
+        }
+
+        .song-list-container h2, #searchResultsContainer h2, #artistsContainer h2, #selectedArtistSongs h2, #myArtistsSection h2 {
+            color: #1ed760;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .song-list, #searchResultsList {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .song-item { /* Also applies to search results items */
+            background-color: #3e3e3e;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .song-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .song-item:hover {
+            background-color: #4a4a4a;
+        }
+
+        .song-info {
+            flex-grow: 1;
+            text-align: left;
+        }
+
+        .song-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #fff;
+        }
+
+        .song-artist {
+            font-size: 0.9em;
+            color: #bbb;
+        }
+
+        /* Artist specific styles for My Library page */
+        #allArtistsList, #myArtistsList {
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            padding: 0; 
+            margin: 0;
+            width: 100%; 
+        }
+
+        .artist-item {
+            background-color: #3e3e3e;
+            padding: 8px;
+            border-radius: 10px;
+            display: flex; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 15px; 
+            width: 100%; 
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .artist-item:hover {
+            background-color: #4a4a4a;
+            transform: translateY(-3px);
+        }
+
+        .artist-item img {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%; 
+            object-fit: cover;
+            border: 3px solid #1ed760;
+            transition: border-color 0.3s ease;
+            flex-shrink: 0; 
+        }
+
+        .artist-item:hover img {
+            border-color: #1db954;
+        }
+
+        /* Container for artist name and button */
+        .artist-details {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; 
+            flex-grow: 1; 
+        }
+
+        .artist-name {
+            font-weight: bold;
+            color: #fff;
+            text-align: left; 
+            font-size: 1em; 
+            margin-bottom: 5px; 
+        }
+
+        .artist-type { /* Added style for 'Artist' text */
+            font-size: 0.8em;
+            color: #999;
+            margin-top: -3px; /* Adjust as needed for spacing */
+            margin-bottom: 5px;
+        }
+
+        .artist-add-button {
+            background-color: #1db954;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            white-space: nowrap; 
+            align-self: flex-start; 
+        }
+
+        .artist-add-button:hover {
+            background-color: #1ed760;
+        }
+
+        .artist-add-button.added {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        .artist-add-button.added:hover {
+            background-color: #555;
+        }
+
+        #myArtistsSection {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+        }
+
+        /* All Artists Section with Save Button */
+        #allArtistsSectionHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #allArtistsSectionHeader h2 {
+            margin: 0; 
+        }
+
+        /* Utility classes for hiding/showing elements */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <a href="index.html" class="logo">𝕾𝖚𝖓𝖔𝕱𝖎</a>
+        <i class="fas fa-search search-icon" id="searchIcon"></i>
+        <div class="search-box" id="searchBox">
+            <input type="text" id="headerSearchInput" placeholder="Search songs, artists, playlists...">
+        </div>
+    </header>
+
+    <nav class="main-nav">
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="explore.html">Explore</a></li>
+            <li><a href="mylibrary.html">My Library</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <div class="page-content-container" id="myLibraryContent">
+        <h2>My Library</h2>
+
+        <div id="artistsContainer">
+            <div id="allArtistsSectionHeader">
+                <h2>All Artists</h2>
+                <button id="saveArtistsButton" class="button hidden">Save</button>
+            </div>
+            <ul id="allArtistsList">
+                </ul>
+        </div>
+
+        <div id="myArtistsSection">
+            <h2>My Favorite Artists</h2>
+            <ul id="myArtistsList">
+                </ul>
+            <p id="noFavoriteArtists" class="placeholder-text">Click "Add Artist" to add your favorite artists here.</p>
+        </div>
+
+        <div id="selectedArtistSongs" class="hidden">
+            <h2 id="selectedArtistSongsTitle"></h2>
+            <ul id="filteredSongsList" class="song-list">
+                </ul>
+            <button id="backToAllArtists" class="button">Back to All Artists</button>
+        </div>
+    </div>
+
+    <footer class="main-footer">
+        <div class="social-icons">
+            <a href="https://twitter.com" target="_blank"><i class="fab fa-twitter"></i></a>
+            <a href="https://facebook.com" target="_blank"><i class="fab fa-facebook-f"></i></a>
+            <a href="https://instagram.com" target="_blank"><i class="fab fa-instagram"></i></a>
+        </div>
+        <p>© 2025 MyMedia. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const allArtistsList = document.getElementById('allArtistsList');
+            const myArtistsList = document.getElementById('myArtistsList');
+            const noFavoriteArtists = document.getElementById('noFavoriteArtists');
+            const selectedArtistSongs = document.getElementById('selectedArtistSongs');
+            const selectedArtistSongsTitle = document.getElementById('selectedArtistSongsTitle');
+            const filteredSongsList = document.getElementById('filteredSongsList');
+            const backToAllArtistsButton = document.getElementById('backToAllArtists');
+            const artistsContainer = document.getElementById('artistsContainer');
+            const myArtistsSection = document.getElementById('myArtistsSection');
+            const saveArtistsButton = document.getElementById('saveArtistsButton');
+
+            let allSongsData = []; // Stores the 'songs' array from songs.json
+            let allArtistsData = []; // Stores the 'artists' array from songs.json
+            let uniqueArtistsMap = new Map(); // Stores unique artist names -> image URLs from allArtistsData
+            let favoriteArtists = JSON.parse(localStorage.getItem('favoriteArtists')) || [];
+            let initialFavoriteArtistsCount = favoriteArtists.length;
+
+            // Helper function to get artist image URL from the centralized allArtistsData
+            function getArtistImage(artistName) {
+                const artist = allArtistsData.find(a => a.name === artistName);
+                if (artist) {
+                    return artist.image;
+                }
+                // Fallback to a placeholder image if no specific image is found
+                return `https://via.placeholder.com/80/CCCCCC/000000?text=${artistName.charAt(0).toUpperCase()}`;
+            }
+
+            // Function to fetch data and initialize the library view
+            async function initLibrary() {
+                try {
+                    // CHANGE THIS LINE: Fetch data from the server API endpoint
+                    const response = await fetch('http://localhost:3000/api/data'); // Assuming your server runs on port 3000
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    allSongsData = data.songs; // Assign songs array
+                    allArtistsData = data.artists; // Assign artists array
+
+                    // Populate uniqueArtistsMap from the dedicated artists data
+                    allArtistsData.forEach(artist => {
+                        uniqueArtistsMap.set(artist.name, artist.image);
+                    });
+
+                    displayAllArtists(); 
+                    renderFavoriteArtists();    
+                    
+                    if (favoriteArtists.length > 0 && initialFavoriteArtistsCount === favoriteArtists.length) {
+                        artistsContainer.classList.add('hidden');
+                        myArtistsSection.classList.remove('hidden');
+                    } else {
+                        artistsContainer.classList.remove('hidden');
+                        myArtistsSection.classList.remove('hidden');
+                    }
+
+                } catch (error) {
+                    console.error('Error fetching data for library:', error);
+                    if (allArtistsList) {
+                        allArtistsList.innerHTML = '<p class="placeholder-text">Could not load artists. Make sure the server is running and songs.json is correctly formatted.</p>';
+                    }
+                }
+            }
+
+            // This function is now simplified as uniqueArtistsMap is directly populated from allArtistsData
+            // It just ensures the map is filled for display purposes, but its core logic is in initLibrary
+            function extractUniqueArtists() {
+                // This function is mostly a placeholder now as the map is built directly from allArtistsData.
+                // However, we can use it to ensure all artists linked in songs also have entries (fallback images).
+                allSongsData.forEach(song => {
+                    const artistsInSong = song.artist.split(',').map(name => name.trim());
+                    artistsInSong.forEach(artistName => {
+                        if (artistName && !uniqueArtistsMap.has(artistName)) {
+                            // If an artist is in a song but not in the main artists list, add them with a fallback.
+                            uniqueArtistsMap.set(artistName, getArtistImage(artistName)); 
+                        }
+                    });
+                });
+            }
+
+
+            function displayAllArtists() {
+                allArtistsList.innerHTML = ''; 
+                if (uniqueArtistsMap.size === 0) {
+                    allArtistsList.innerHTML = '<p class="placeholder-text">No artists found in your song list.</p>';
+                    return;
+                }
+
+                // Sort artist names alphabetically
+                const sortedArtistNames = Array.from(uniqueArtistsMap.keys()).sort();
+
+                sortedArtistNames.forEach(artistName => {
+                    const imageUrl = uniqueArtistsMap.get(artistName); 
+                    
+                    const artistItem = document.createElement('li');
+                    artistItem.classList.add('artist-item');
+                    artistItem.innerHTML = `
+                        <img src="${imageUrl}" alt="${artistName}">
+                        <div class="artist-details">
+                            <div class="artist-name">${artistName}</div>
+                            <div class="artist-type">Artist</div> <button class="artist-add-button button" data-artist="${artistName}">
+                                ${favoriteArtists.includes(artistName) ? 'Added' : 'Add Artist'}
+                            </button>
+                        </div>
+                    `;
+                    const addButton = artistItem.querySelector('.artist-add-button');
+                    if (favoriteArtists.includes(artistName)) {
+                        addButton.classList.add('added');
+                        addButton.disabled = true;
+                    }
+
+                    addButton.addEventListener('click', (event) => {
+                        event.stopPropagation(); // Prevents clicking the whole item if button is clicked
+                        addArtistToFavorites(artistName, addButton);
+                    });
+                    // Clicking the artist item (not the button) will show their songs
+                    artistItem.addEventListener('click', () => {
+                            displaySongsByArtist(artistName);
+                    });
+                    allArtistsList.appendChild(artistItem);
+                });
+            }
+
+            function addArtistToFavorites(artistName, button) {
+                if (!favoriteArtists.includes(artistName)) {
+                    favoriteArtists.push(artistName);
+                    localStorage.setItem('favoriteArtists', JSON.stringify(favoriteArtists));
+                    renderFavoriteArtists(); 
+                    
+                    button.textContent = 'Added';
+                    button.classList.add('added');
+                    button.disabled = true;
+                    saveArtistsButton.classList.remove('hidden');
+                }
+            }
+
+            function renderFavoriteArtists() {
+                myArtistsList.innerHTML = ''; 
+                if (favoriteArtists.length === 0) {
+                    noFavoriteArtists.classList.remove('hidden');
+                    return;
+                }
+                noFavoriteArtists.classList.add('hidden');
+
+                favoriteArtists.forEach(artistName => {
+                    const imageUrl = uniqueArtistsMap.get(artistName); // Use the global map for consistent image lookup
+                    
+                    const artistItem = document.createElement('li');
+                    artistItem.classList.add('artist-item');
+                    artistItem.innerHTML = `
+                        <img src="${imageUrl}" alt="${artistName}">
+                        <div class="artist-details">
+                            <div class="artist-name">${artistName}</div>
+                            <div class="artist-type">Artist</div> </div>
+                    `;
+                    artistItem.addEventListener('click', () => {
+                        displaySongsByArtist(artistName);
+                    });
+                    myArtistsList.appendChild(artistItem);
+                });
+            }
+
+            function displaySongsByArtist(artistName) {
+                const filteredSongs = allSongsData.filter(song => 
+                    song.artist.split(',').map(name => name.trim()).includes(artistName)
+                );
+
+                artistsContainer.classList.add('hidden');
+                myArtistsSection.classList.add('hidden');
+                selectedArtistSongs.classList.remove('hidden');
+
+                selectedArtistSongsTitle.textContent = `${artistName}'s Songs`;
+                filteredSongsList.innerHTML = '';
+
+                if (filteredSongs.length === 0) {
+                    filteredSongsList.innerHTML = '<p class="placeholder-text">No songs found for this artist.</p>';
+                    return;
+                }
+
+                filteredSongs.forEach(song => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('song-item');
+                    listItem.dataset.url = song.url; 
+
+                    listItem.innerHTML = `
+                        <div class="song-info">
+                            <div class="song-title">${song.title}</div>
+                            <div class="song-artist">${song.artist}</div>
+                        </div>
+                        <div class="play-icon">►</div>
+                    `;
+                    filteredSongsList.appendChild(listItem);
+
+                    listItem.addEventListener('click', () => {
+                        window.location.href = `index.html?url=${encodeURIComponent(song.url)}`; 
+                    });
+                });
+            }
+
+            backToAllArtistsButton.addEventListener('click', () => {
+                selectedArtistSongs.classList.add('hidden');
+                
+                if (favoriteArtists.length === 0 || favoriteArtists.length > initialFavoriteArtistsCount) {
+                    artistsContainer.classList.remove('hidden');
+                    saveArtistsButton.classList.remove('hidden');
+                } else {
+                     artistsContainer.classList.add('hidden');
+                }
+                myArtistsSection.classList.remove('hidden');
+            });
+
+            saveArtistsButton.addEventListener('click', () => {
+                localStorage.setItem('favoriteArtists', JSON.stringify(favoriteArtists)); // Ensure latest favorites are saved
+                artistsContainer.classList.add('hidden');
+                myArtistsSection.classList.remove('hidden');
+                saveArtistsButton.classList.add('hidden');
+                initialFavoriteArtistsCount = favoriteArtists.length; 
+            });
+
+            initLibrary();
+
+            const searchIcon = document.getElementById('searchIcon');
+            const searchBox = document.getElementById('searchBox');
+            if (searchIcon) searchIcon.classList.add('hidden');
+            if (searchBox) searchBox.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>

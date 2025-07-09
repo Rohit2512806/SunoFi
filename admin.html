@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - MyMedia</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .form-section, .list-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="url"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        button.delete-btn {
+            background-color: #dc3545;
+        }
+        button.delete-btn:hover {
+            background-color: #c82333;
+        }
+        button.edit-btn {
+            background-color: #007bff;
+        }
+        button.edit-btn:hover {
+            background-color: #0069d9;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background-color: #fff;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #eee;
+        }
+        li span {
+            flex-grow: 1;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Panel</h1>
+
+        <div class="form-section">
+            <h2>Add New Song</h2>
+            <div class="form-group">
+                <label for="songTitle">Title:</label>
+                <input type="text" id="songTitle" placeholder="Song Title">
+            </div>
+            <div class="form-group">
+                <label for="songArtist">Artist(s) (comma-separated):</label>
+                <input type="text" id="songArtist" placeholder="Artist1, Artist2">
+            </div>
+            <div class="form-group">
+                <label for="songUrl">URL:</label>
+                <input type="url" id="songUrl" placeholder="http://example.com/song_url">
+            </div>
+            <button id="addSongBtn">Add Song</button>
+        </div>
+
+        <div class="form-section">
+            <h2>Add New Artist</h2>
+            <div class="form-group">
+                <label for="artistName">Artist Name:</label>
+                <input type="text" id="artistName" placeholder="Artist Name">
+            </div>
+            <div class="form-group">
+                <label for="artistImage">Image URL:</label>
+                <input type="url" id="artistImage" placeholder="http://example.com/image.jpg">
+            </div>
+            <button id="addArtistBtn">Add Artist</button>
+        </div>
+
+        <div class="list-section">
+            <h2>Existing Songs</h2>
+            <ul id="songsList">
+                </ul>
+        </div>
+
+        <div class="list-section">
+            <h2>Existing Artists</h2>
+            <ul id="artistsList">
+                </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+
+        // Get elements
+        const songTitleInput = document.getElementById('songTitle');
+        const songArtistInput = document.getElementById('songArtist');
+        const songUrlInput = document.getElementById('songUrl');
+        const addSongBtn = document.getElementById('addSongBtn');
+
+        const artistNameInput = document.getElementById('artistName');
+        const artistImageInput = document.getElementById('artistImage');
+        const addArtistBtn = document.getElementById('addArtistBtn');
+
+        const songsList = document.getElementById('songsList');
+        const artistsList = document.getElementById('artistsList');
+
+        // --- Functions to interact with API ---
+
+        async function fetchData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/data`);
+                if (!response.ok) throw new Error('Failed to fetch data');
+                const data = await response.json();
+                renderSongs(data.songs);
+                renderArtists(data.artists);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('Error fetching data. See console for details.');
+            }
+        }
+
+        async function addSong() {
+            const title = songTitleInput.value.trim();
+            const artist = songArtistInput.value.trim();
+            const url = songUrlInput.value.trim();
+
+            if (!title || !artist || !url) {
+                alert('Please fill all song fields.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/add-song`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, artist, url })
+                });
+                if (!response.ok) throw new Error('Failed to add song');
+                await response.json();
+                alert('Song added successfully!');
+                songTitleInput.value = '';
+                songArtistInput.value = '';
+                songUrlInput.value = '';
+                fetchData(); // Refresh lists
+            } catch (error) {
+                console.error('Error adding song:', error);
+                alert('Error adding song. See console for details.');
+            }
+        }
+
+        async function addArtist() {
+            const name = artistNameInput.value.trim();
+            const image = artistImageInput.value.trim();
+
+            if (!name || !image) {
+                alert('Please fill all artist fields.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/add-artist`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, image })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to add artist');
+                }
+                await response.json();
+                alert('Artist added successfully!');
+                artistNameInput.value = '';
+                artistImageInput.value = '';
+                fetchData(); // Refresh lists
+            } catch (error) {
+                console.error('Error adding artist:', error);
+                alert(`Error adding artist: ${error.message}. See console for details.`);
+            }
+        }
+
+        async function deleteSong(id) {
+            if (!confirm('Are you sure you want to delete this song?')) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/delete-song/${id}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) throw new Error('Failed to delete song');
+                alert('Song deleted successfully!');
+                fetchData(); // Refresh lists
+            } catch (error) {
+                console.error('Error deleting song:', error);
+                alert('Error deleting song. See console for details.');
+            }
+        }
+
+        async function deleteArtist(name) {
+            if (!confirm(`Are you sure you want to delete artist "${name}"? This will NOT update songs that use this artist.`)) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/delete-artist/${encodeURIComponent(name)}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) throw new Error('Failed to delete artist');
+                alert('Artist deleted successfully!');
+                fetchData(); // Refresh lists
+            } catch (error) {
+                console.error('Error deleting artist:', error);
+                alert('Error deleting artist. See console for details.');
+            }
+        }
+
+        // --- Render Functions ---
+
+        function renderSongs(songs) {
+            songsList.innerHTML = '';
+            if (songs.length === 0) {
+                songsList.innerHTML = '<li>No songs found.</li>';
+                return;
+            }
+            songs.forEach(song => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span><strong>${song.title}</strong> by ${song.artist} (<a href="${song.url}" target="_blank">Link</a>)</span>
+                    <div>
+                        <button class="edit-btn" data-id="${song.id}" data-type="song">Edit</button>
+                        <button class="delete-btn" data-id="${song.id}" data-type="song">Delete</button>
+                    </div>
+                `;
+                songsList.appendChild(li);
+            });
+            attachListEventListeners();
+        }
+
+        function renderArtists(artists) {
+            artistsList.innerHTML = '';
+            if (artists.length === 0) {
+                artistsList.innerHTML = '<li>No artists found.</li>';
+                return;
+            }
+            artists.forEach(artist => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span><strong>${artist.name}</strong> (<a href="${artist.image}" target="_blank">Image</a>)</span>
+                    <div>
+                        <button class="edit-btn" data-name="${artist.name}" data-type="artist">Edit</button>
+                        <button class="delete-btn" data-name="${artist.name}" data-type="artist">Delete</button>
+                    </div>
+                `;
+                artistsList.appendChild(li);
+            });
+            attachListEventListeners();
+        }
+
+        // --- Event Listeners ---
+
+        addSongBtn.addEventListener('click', addSong);
+        addArtistBtn.addEventListener('click', addArtist);
+
+        function attachListEventListeners() {
+            // Detach previous listeners to prevent duplicates
+            songsList.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.onclick = null; // Clear existing
+                btn.onclick = () => deleteSong(btn.dataset.id);
+            });
+            artistsList.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.onclick = null; // Clear existing
+                btn.onclick = () => deleteArtist(btn.dataset.name);
+            });
+
+            // Edit functionality (basic prompt for now)
+            songsList.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.onclick = null;
+                btn.onclick = async () => {
+                    const songId = btn.dataset.id;
+                    const data = (await fetch(`${API_BASE_URL}/data`).then(res => res.json())).songs;
+                    const songToEdit = data.find(s => s.id === songId);
+                    if (songToEdit) {
+                        const newTitle = prompt('Edit Title:', songToEdit.title);
+                        const newArtist = prompt('Edit Artist (comma-separated):', songToEdit.artist);
+                        const newUrl = prompt('Edit URL:', songToEdit.url);
+
+                        if (newTitle !== null && newArtist !== null && newUrl !== null) { // Check if user didn't cancel
+                            try {
+                                const response = await fetch(`${API_BASE_URL}/update-song/${songId}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ title: newTitle, artist: newArtist, url: newUrl })
+                                });
+                                if (!response.ok) throw new Error('Failed to update song');
+                                alert('Song updated successfully!');
+                                fetchData();
+                            } catch (error) {
+                                console.error('Error updating song:', error);
+                                alert('Error updating song. See console for details.');
+                            }
+                        }
+                    }
+                };
+            });
+
+            artistsList.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.onclick = null;
+                btn.onclick = async () => {
+                    const artistName = btn.dataset.name;
+                    const data = (await fetch(`${API_BASE_URL}/data`).then(res => res.json())).artists;
+                    const artistToEdit = data.find(a => a.name === artistName);
+                    if (artistToEdit) {
+                        const newName = prompt('Edit Artist Name:', artistToEdit.name);
+                        const newImage = prompt('Edit Image URL:', artistToEdit.image);
+
+                        if (newName !== null && newImage !== null) { // Check if user didn't cancel
+                            try {
+                                const response = await fetch(`${API_BASE_URL}/update-artist/${encodeURIComponent(artistName)}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ name: newName, image: newImage })
+                                });
+                                if (!response.ok) throw new Error('Failed to update artist');
+                                alert('Artist updated successfully!');
+                                fetchData();
+                            } catch (error) {
+                                console.error('Error updating artist:', error);
+                                alert('Error updating artist. See console for details.');
+                            }
+                        }
+                    }
+                };
+            });
+        }
+
+
+        // Initial fetch when page loads
+        fetchData();
+    </script>
+</body>
+</html>

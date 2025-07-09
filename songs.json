@@ -1,0 +1,84 @@
+{
+    "songs": [
+        {
+            "id": "song1",
+            "title": "Tere Vaaste",
+            "artist": "Varun Jain",
+            "url": "https://youtu.be/KGn-erOG-Bs?si=mAfzBmlaPAjx0gRt"
+        },
+        {
+            "id": "song2",
+            "title": "Kesariya",
+            "artist": "Pritam, Arijit Singh",
+            "url": "https://youtu.be/-8C_2BBVWk8?si=kczsGCqnX5R3FpBJ"
+        },
+        {
+            "id": "song3",
+            "title": "Heeriye (feat. Arijit Singh)",
+            "artist": "Jasleen Royal",
+            "url": "https://open.spotify.com/track/30NOoFVrVgeqa6otE18Kza?si=pyuzw11vT4q1SJseU8difQ&context=spotify%3Aplaylist%3A37i9dQZF1DWTYKFynxp6Fs"
+        },
+        {
+            "id": "song4",
+            "title": "O Maahi",
+            "artist": "Arijit Singh",
+            "url": "https://open.spotify.com/track/3NncVbpKJ91HPpI5TUIugV?si=8V17fzKdQxiYbfaGTfr84g&context=spotify%3Aplaylist%3A37i9dQZF1DWTYKFynxp6Fs"
+        },
+        {
+            "id": "song5",
+            "title": "Ram Siya Ram",
+            "artist": "Sachet Tandon",
+            "url": "https://open.spotify.com/track/5yAfCVJwa3r9wAQSOfawqm?si=4DkxMqwdS-6YTnLARj1BOA&context=spotify%3Aplaylist%3A37i9dQZF1DWTYKFynxp6Fs"
+        },
+        {
+            "title": "Jaana Samjho Na",
+            "artist": "Aditya Rikhari",
+            "url": "https://open.spotify.com/track/1PALLCSlHwAI4upY3sMg8u?si=f8b6b0ad14174d78",
+            "id": "song6"
+        },
+        {
+            "title": "Hamsafar Song",
+            "artist": "Zain",
+            "url": "https://soundcloud.com/100xdigi/humsafar-song-saiyaara-sachet?in=inder-kirat/sets/top-indian-songs-2023&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing",
+            "id": "song7"
+        }
+    ],
+    "artists": [
+        {
+            "name": "Varun Jain",
+            "image": "image/image_search_1752066269252.jpg"
+        },
+        {
+            "name": "Sachin-Jigar",
+            "image": "image/image_search_1752066421193.webp"
+        },
+        {
+            "name": "Shadab Faridi",
+            "image": "image/image_search_1752066371569.jpg"
+        },
+        {
+            "name": "Altamash Faridi",
+            "image": "https://via.placeholder.com/80/FFFF33/000000?text=AF"
+        },
+        {
+            "name": "Pritam",
+            "image": "https://via.placeholder.com/80/FF33FF/FFFFFF?text=PR"
+        },
+        {
+            "name": "Arijit Singh",
+            "image": "https://via.placeholder.com/80/33FFFF/000000?text=AS"
+        },
+        {
+            "name": "Amitabh Bhattacharya",
+            "image": "https://via.placeholder.com/80/FF8833/FFFFFF?text=AB"
+        },
+        {
+            "name": "Jasleen Royal",
+            "image": "https://via.placeholder.com/80/8833FF/FFFFFF?text=JR"
+        },
+        {
+            "name": "Sachet Tandon",
+            "image": "https://via.placeholder.com/80/33FF88/000000?text=ST"
+        }
+    ]
+}

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Simple Media Player - Explore</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+     <link rel="stylesheet" href="style.css">
+   <style>
+        
+        .page-content-container {
+            background-color: #282828;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 90%;
+            max-width: 100%;
+            margin-top: 10px;
+            flex-grow: 1;
+        }
+
+        .page-content-container h2 {
+            color: #1ed760;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .page-content-container p {
+            color: #bbb;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <a href="index.html" class="logo">𝕾𝖚𝖓𝖔𝕱𝖎</a>
+        <i class="fas fa-search search-icon" id="searchIcon"></i>
+        <div class="search-box" id="searchBox">
+            <input type="text" id="headerSearchInput" placeholder="Search songs, artists, playlists...">
+        </div>
+    </header>
+
+    <nav class="main-nav">
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="explore.html">Explore</a></li>
+            <li><a href="mylibrary.html">My Library</a></li>
+            <li><a href="about.html">About</a></li>
+        </ul>
+    </nav>
+
+    <div class="page-content-container">
+        <h2>Explore New Music</h2>
+        <p>Discover a wide range of genres, trending songs, and popular artists from around the world.</p>
+        <p>This page will feature curated playlists, new releases, and personalized recommendations.</p>
+        <p>Stay tuned for exciting content updates!</p>
+    </div>
+
+    <footer class="main-footer">
+        <div class="social-icons">
+            <a href="https://twitter.com" target="_blank"><i class="fab fa-twitter"></i></a>
+            <a href="https://facebook.com" target="_blank"><i class="fab fa-facebook-f"></i></a>
+            <a href="https://instagram.com" target="_blank"><i class="fab fa-instagram"></i></a>
+        </div>
+        <p>© 2025 MyMedia. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hide search icon and search box on non-index pages
+            const searchIcon = document.getElementById('searchIcon');
+            const searchBox = document.getElementById('searchBox');
+            if (searchIcon) searchIcon.style.display = 'none';
+            if (searchBox) searchBox.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
