@@ -159,7 +159,6 @@
     <script>
         const API_BASE_URL = 'https://sunofi.onrender.com/api';
 
-        // Get elements
         const songTitleInput = document.getElementById('songTitle');
         const songArtistInput = document.getElementById('songArtist');
         const songUrlInput = document.getElementById('songUrl');
@@ -172,26 +171,33 @@
         const songsList = document.getElementById('songsList');
         const artistsList = document.getElementById('artistsList');
 
-        // --- Functions to interact with API ---
-
+        /**
+         * Fetches song and artist data from the server and renders them in the UI.
+         * Ensures the lists are refreshed whenever data is updated.
+         */
         async function fetchData() {
             try {
-                const response = await fetch(`https://sunofi.onrender.com/api/data`);
+                const response = await fetch(`${API_BASE_URL}/data`);
                 if (!response.ok) throw new Error('Failed to fetch data');
                 const data = await response.json();
                 renderSongs(data.songs);
                 renderArtists(data.artists);
             } catch (error) {
+                console.error('Error fetching data:', error);
             }
         }
 
+        /**
+         * Adds a new song to the server.
+         * It takes data from input fields and sends a POST request.
+         */
         async function addSong() {
             const title = songTitleInput.value.trim();
             const artist = songArtistInput.value.trim();
             const url = songUrlInput.value.trim();
 
             if (!title || !artist || !url) {
-                alert('Please fill all song fields.');
+                alert('Please fill in all song fields.');
                 return;
             }
 
@@ -207,19 +213,23 @@
                 songTitleInput.value = '';
                 songArtistInput.value = '';
                 songUrlInput.value = '';
-                fetchData(); // Refresh lists
+                fetchData();
             } catch (error) {
                 console.error('Error adding song:', error);
-                alert('Error adding song. See console for details.');
+                alert('Error adding song. Check console for details.');
             }
         }
 
+        /**
+         * Adds a new artist to the server.
+         * It takes data from input fields and sends a POST request.
+         */
         async function addArtist() {
             const name = artistNameInput.value.trim();
             const image = artistImageInput.value.trim();
 
             if (!name || !image) {
-                alert('Please fill all artist fields.');
+                alert('Please fill in all artist fields.');
                 return;
             }
 
@@ -237,13 +247,18 @@
                 alert('Artist added successfully!');
                 artistNameInput.value = '';
                 artistImageInput.value = '';
-                fetchData(); // Refresh lists
+                fetchData();
             } catch (error) {
                 console.error('Error adding artist:', error);
-                alert(`Error adding artist: ${error.message}. See console for details.`);
+                alert(`Error adding artist: ${error.message}. Check console for details.`);
             }
         }
 
+        /**
+         * Deletes a song from the server.
+         * @param {string} id - The ID of the song to delete.
+         * Prompts the user for confirmation before deleting.
+         */
         async function deleteSong(id) {
             if (!confirm('Are you sure you want to delete this song?')) return;
             try {
@@ -252,28 +267,38 @@
                 });
                 if (!response.ok) throw new Error('Failed to delete song');
                 alert('Song deleted successfully!');
-                fetchData(); // Refresh lists
+                fetchData();
             } catch (error) {
-                alert('Error deleting song. See console for details.');
+                console.error('Error deleting song:', error);
+                alert('Error deleting song. Check console for details.');
             }
         }
 
+        /**
+         * Deletes an artist from the server.
+         * @param {string} name - The name of the artist to delete.
+         * Prompts the user for confirmation before deleting.
+         */
         async function deleteArtist(name) {
-            if (!confirm(`Are you sure you want to delete artist "${name}"? This will NOT update songs that use this artist.`)) return;
+            if (!confirm(`Are you sure you want to delete artist "${name}"? This will not update songs that use this artist.`)) return;
             try {
                 const response = await fetch(`${API_BASE_URL}/delete-artist/${encodeURIComponent(name)}`, {
                     method: 'DELETE'
                 });
                 if (!response.ok) throw new Error('Failed to delete artist');
                 alert('Artist deleted successfully!');
-                fetchData(); // Refresh lists
+                fetchData();
             } catch (error) {
-                alert('Error deleting artist. See console for details.');
+                console.error('Error deleting artist:', error);
+                alert('Error deleting artist. Check console for details.');
             }
         }
 
-        // --- Render Functions ---
-
+        /**
+         * Renders the list of songs in the UI.
+         * @param {Array<Object>} songs - An array of song objects to render.
+         * Creates a list item for each song with edit and delete buttons.
+         */
         function renderSongs(songs) {
             songsList.innerHTML = '';
             if (songs.length === 0) {
@@ -294,6 +319,11 @@
             attachListEventListeners();
         }
 
+        /**
+         * Renders the list of artists in the UI.
+         * @param {Array<Object>} artists - An array of artist objects to render.
+         * Creates a list item for each artist with edit and delete buttons.
+         */
         function renderArtists(artists) {
             artistsList.innerHTML = '';
             if (artists.length === 0) {
@@ -314,54 +344,60 @@
             attachListEventListeners();
         }
 
-        // --- Event Listeners ---
-
-        addSongBtn.addEventListener('click', addSong);
-        addArtistBtn.addEventListener('click', addArtist);
-
+        /**
+         * Attaches event listeners to dynamically created list items (delete and edit buttons).
+         * This function ensures that new elements have the correct event handlers.
+         */
         function attachListEventListeners() {
-            // Detach previous listeners to prevent duplicates
+            // Event listeners for song delete buttons
             songsList.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.onclick = null; // Clear existing
+                btn.onclick = null; // Clear existing listener to prevent duplicates
                 btn.onclick = () => deleteSong(btn.dataset.id);
             });
+            // Event listeners for artist delete buttons
             artistsList.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.onclick = null; // Clear existing
+                btn.onclick = null; // Clear existing listener
                 btn.onclick = () => deleteArtist(btn.dataset.name);
             });
 
-            // Edit functionality (basic prompt for now)
+            // Edit functionality for songs
             songsList.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.onclick = null;
+                btn.onclick = null; // Clear existing listener
                 btn.onclick = async () => {
                     const songId = btn.dataset.id;
                     const data = (await fetch(`${API_BASE_URL}/data`).then(res => res.json())).songs;
                     const songToEdit = data.find(s => s.id === songId);
+
                     if (songToEdit) {
                         const newTitle = prompt('Edit Title:', songToEdit.title);
                         const newArtist = prompt('Edit Artist (comma-separated):', songToEdit.artist);
                         const newUrl = prompt('Edit URL:', songToEdit.url);
 
-                        if (newTitle !== null && newArtist !== null && newUrl !== null) { // Check if user didn't cancel
+                        if (newTitle !== null && newArtist !== null && newUrl !== null) { // Check if user didn't cancel prompt
                             try {
                                 const response = await fetch(`${API_BASE_URL}/update-song/${songId}`, {
                                     method: 'PUT',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ title: newTitle, artist: newArtist, url: newUrl })
                                 });
-                                if (!response.ok) throw new Error('Failed to update song');
+                                if (!response.ok) {
+                                    const errorData = await response.text();
+                                    throw new Error(`Failed to update song: ${response.status} ${response.statusText} - ${errorData}`);
+                                }
                                 alert('Song updated successfully!');
-                                fetchData();
+                                fetchData(); // Refresh lists after update
                             } catch (error) {
-                                alert('Error updating song. See console for details.');
+                                console.error('Error updating song:', error);
+                                alert('Error updating song. Check console for details.');
                             }
                         }
                     }
                 };
             });
 
+            // Edit functionality for artists
             artistsList.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.onclick = null;
+                btn.onclick = null; // Clear existing listener
                 btn.onclick = async () => {
                     const artistName = btn.dataset.name;
                     const data = (await fetch(`${API_BASE_URL}/data`).then(res => res.json())).artists;
@@ -370,7 +406,7 @@
                         const newName = prompt('Edit Artist Name:', artistToEdit.name);
                         const newImage = prompt('Edit Image URL:', artistToEdit.image);
 
-                        if (newName !== null && newImage !== null) { // Check if user didn't cancel
+                        if (newName !== null && newImage !== null) { // Check if user didn't cancel prompt
                             try {
                                 const response = await fetch(`${API_BASE_URL}/update-artist/${encodeURIComponent(artistName)}`, {
                                     method: 'PUT',
@@ -381,7 +417,8 @@
                                 alert('Artist updated successfully!');
                                 fetchData();
                             } catch (error) {
-                                alert('Error updating artist. See console for details.');
+                                console.error('Error updating artist:', error);
+                                alert('Error updating artist. Check console for details.');
                             }
                         }
                     }
@@ -389,8 +426,7 @@
             });
         }
 
-
-        // Initial fetch when page loads
+        // Initial data fetch when the page loads
         fetchData();
     </script>
 </body>
