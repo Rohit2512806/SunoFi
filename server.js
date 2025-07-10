@@ -5,46 +5,49 @@ const mongoose = require('mongoose');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Use PORT environment variable on Render, fallback to 3000 locally
 
 // MongoDB Connection URI
+// Please ensure this URI is correct and your database name 'MusicData' is accurate.
 const MONGODB_URI = 'mongodb+srv://rohitpatel2512806:74Rohit58@cluster0.1uu3aet.mongodb.net/MusicData?retryWrites=true&w=majority&appName=Cluster0';
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI)
+    .then(() => console.log('MongoDB connected successfully'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
-.then(() => console.log('MongoDB connected successfully'))
-.catch(err => console.error('MongoDB connection error:', err));
-
-// --- Define Mongoose Schemas and Models (Updated) ---
+// --- Define Mongoose Schemas and Models ---
 const songSchema = new mongoose.Schema({
-    id: { type: String, unique: true, required: true },
-    title: String,
-    artist: String,
-    album: String,    // Optional: Add if you want to store album
-    genre: String,    // Optional: Add if you want to store genre
-    duration: String, // Optional: Add if you want to store duration
-    url: String,      // <--- ADDED: This is crucial for storing the song URL
+    id: { type: String, unique: true, required: true }, // 'id' field is required and should be unique
+    title: { type: String, required: true }, // Title is required
+    artist: { type: String, required: true }, // Artist is required
+    album: String,    // Optional
+    genre: String,    // Optional
+    duration: String, // Optional
+    url: { type: String, required: false }, // URL is not strictly required, can be null/empty
 });
 
 const artistSchema = new mongoose.Schema({
-    name: { type: String, unique: true, required: true },
-    image: String,    // <--- ADDED: This is crucial for storing the artist image URL
-    genre: String,    // Optional: Add if you want to store genre
-    bio: String,      // Optional: Add if you want to store bio
+    name: { type: String, unique: true, required: true }, // Name is required and unique
+    image: { type: String, required: false }, // Image URL is not strictly required
+    genre: String,    // Optional
+    bio: String,      // Optional
 });
 
 const Song = mongoose.model('Song', songSchema);
 const Artist = mongoose.model('Artist', artistSchema);
 
 // Middleware
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '.')));
+app.use(cors()); // Enable CORS for requests from all origins
+app.use(bodyParser.json()); // Parse JSON request bodies
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from the 'public' folder (if you use one)
 
 // --- API Endpoints ---
 
-// GET all data (songs and artists)
+/**
+ * Handles GET requests to retrieve all songs and artists from MongoDB.
+ * Returns a JSON object containing arrays of songs and artists.
+ */
 app.get('/api/data', async (req, res) => {
     try {
         const songs = await Song.find();
@@ -56,70 +59,111 @@ app.get('/api/data', async (req, res) => {
     }
 });
 
-// ADD a new song
+/**
+ * Handles POST requests to add a new song to MongoDB.
+ * Expects 'title', 'artist', and 'url' in the request body.
+ * Generates a simple unique ID for the song.
+ */
 app.post('/api/add-song', async (req, res) => {
     try {
-        const newSongData = req.body;
-        // Generate a simple ID if not provided, or use a more robust method
-        newSongData.id = newSongData.id || `song${Date.now()}`;
+        const { title, artist, url, album, genre, duration } = req.body;
+
+        if (!title || !artist || !url) {
+            return res.status(400).json({ message: 'Title, artist, and URL are required.' });
+        }
+
+        const newSongData = {
+            id: `song${Date.now()}`, // Generate a simple, unique ID
+            title,
+            artist,
+            url,
+            album: album || '', // Default to empty string if not provided
+            genre: genre || '',
+            duration: duration || ''
+        };
+
         const newSong = new Song(newSongData);
         await newSong.save();
         res.status(201).json(newSong);
     } catch (error) {
         console.error('Error adding song to MongoDB:', error);
+        if (error.code === 11000) { // Handle duplicate key error
+            return res.status(409).json({ message: 'A song with this ID already exists.', error: error.message });
+        }
         res.status(500).json({ message: 'Error adding song.', error: error.message });
     }
 });
 
-// ADD a new artist
+/**
+ * Handles POST requests to add a new artist to MongoDB.
+ * Expects 'name' and 'image' in the request body.
+ * Checks if an artist with the same name already exists to prevent duplicates.
+ */
 app.post('/api/add-artist', async (req, res) => {
     try {
-        const newArtistData = req.body;
-        // Check if artist already exists
+        const { name, image, genre, bio } = req.body;
+
+        if (!name) {
+            return res.status(400).json({ message: 'Artist name is required.' });
+        }
+
+        const newArtistData = {
+            name,
+            image: image || '',
+            genre: genre || '',
+            bio: bio || ''
+        };
+
         const existingArtist = await Artist.findOne({ name: newArtistData.name });
         if (existingArtist) {
             return res.status(409).json({ message: 'Artist already exists.' });
         }
+
         const newArtist = new Artist(newArtistData);
         await newArtist.save();
         res.status(201).json(newArtist);
     } catch (error) {
         console.error('Error adding artist to MongoDB:', error);
+        if (error.code === 11000) { // Handle duplicate key error
+            return res.status(409).json({ message: 'An artist with this name already exists.', error: error.message });
+        }
         res.status(500).json({ message: 'Error adding artist.', error: error.message });
     }
 });
 
-// UPDATE a song
+/**
+ * Handles PUT requests to update an existing song by its ID.
+ * Expects 'title', 'artist', and 'url' in the request body.
+ * Updates only the fields provided in the request.
+ */
 app.put('/api/update-song/:id', async (req, res) => {
     try {
         const songId = req.params.id;
-        const { title, artist, url } = req.body; // request body से title, artist, url निकालें
+        const { title, artist, url } = req.body; // Destructure all expected fields from the request body
 
-        // एक ऑब्जेक्ट बनाएं जिसमें अपडेट करने के लिए फ़ील्ड्स हों
+        // Create an object containing fields to update, only if they are present in the request
         const updateFields = {};
+        if (title !== undefined) updateFields.title = title;
+        if (artist !== undefined) updateFields.artist = artist;
+        if (url !== undefined) updateFields.url = url; // This line ensures the URL is updated
 
-        // केवल तभी फ़ील्ड्स को जोड़ें यदि वे रिक्वेस्ट बॉडी में मौजूद हों
-        if (title !== undefined) {
-            updateFields.title = title;
-        }
-        if (artist !== undefined) {
-            updateFields.artist = artist;
-        }
-        if (url !== undefined) { // यह सुनिश्चित करता है कि URL को अपडेट/जोड़ा जाए
-            updateFields.url = url;
-        }
+        // Log the received data and the update operation for debugging
+        console.log(`Updating song with ID: ${songId}`);
+        console.log('Received data for update:', req.body);
+        console.log('Fields to update:', updateFields);
 
-        // $set ऑपरेटर का उपयोग करके स्पष्ट रूप से फ़ील्ड्स को अपडेट/जोड़ें
         const updatedSong = await Song.findOneAndUpdate(
-            { id: songId }, // गाने को उसके id से ढूंढें
-            { $set: updateFields }, // updateFields में दिए गए फ़ील्ड्स को सेट करें
-            { new: true } // अपडेटेड दस्तावेज़ वापस करें
+            { id: songId }, // Find the song by its 'id'
+            { $set: updateFields }, // Set the fields provided in updateFields
+            { new: true, runValidators: true } // 'new: true' returns the updated document, 'runValidators: true' runs schema validators
         );
 
         if (updatedSong) {
-            res.json(updatedSong); // अपडेटेड गाना वापस भेजें
+            console.log('Song updated successfully:', updatedSong);
+            res.json(updatedSong); // Send back the updated song
         } else {
-            res.status(404).json({ message: 'Song not found.' }); // अगर गाना नहीं मिला तो 404
+            console.warn(`Song with ID: ${songId} not found for update.`);
+            res.status(404).json({ message: 'Song not found.' }); // 404 if song not found
         }
     } catch (error) {
         console.error('Error updating song in MongoDB:', error);
@@ -127,12 +171,28 @@ app.put('/api/update-song/:id', async (req, res) => {
     }
 });
 
-// UPDATE an artist
+/**
+ * Handles PUT requests to update an existing artist by their name.
+ * Expects 'name', 'image', 'genre', 'bio' in the request body.
+ * Updates only the fields provided in the request.
+ */
 app.put('/api/update-artist/:name', async (req, res) => {
     try {
-        const artistName = req.params.name;
-        const updatedArtistData = req.body;
-        const updatedArtist = await Artist.findOneAndUpdate({ name: artistName }, updatedArtistData, { new: true });
+        const artistName = decodeURIComponent(req.params.name); // Decode URL-encoded name
+        const { name, image, genre, bio } = req.body;
+
+        const updateFields = {};
+        if (name !== undefined) updateFields.name = name;
+        if (image !== undefined) updateFields.image = image;
+        if (genre !== undefined) updateFields.genre = genre;
+        if (bio !== undefined) updateFields.bio = bio;
+
+        const updatedArtist = await Artist.findOneAndUpdate(
+            { name: artistName },
+            { $set: updateFields },
+            { new: true, runValidators: true }
+        );
+
         if (updatedArtist) {
             res.json(updatedArtist);
         } else {
@@ -144,7 +204,10 @@ app.put('/api/update-artist/:name', async (req, res) => {
     }
 });
 
-// DELETE a song
+/**
+ * Handles DELETE requests to remove a song by its ID from MongoDB.
+ * Returns 204 No Content on successful deletion, or 404 if the song is not found.
+ */
 app.delete('/api/delete-song/:id', async (req, res) => {
     try {
         const songId = req.params.id;
@@ -160,10 +223,13 @@ app.delete('/api/delete-song/:id', async (req, res) => {
     }
 });
 
-// DELETE an artist
+/**
+ * Handles DELETE requests to remove an artist by their name from MongoDB.
+ * Returns 204 No Content on successful deletion, or 404 if the artist is not found.
+ */
 app.delete('/api/delete-artist/:name', async (req, res) => {
     try {
-        const artistName = req.params.name;
+        const artistName = decodeURIComponent(req.params.name); // Decode URL-encoded name
         const result = await Artist.deleteOne({ name: artistName });
         if (result.deletedCount > 0) {
             res.status(204).send(); // No Content
@@ -176,9 +242,20 @@ app.delete('/api/delete-artist/:name', async (req, res) => {
     }
 });
 
-// Serve the admin HTML file
+/**
+ * Serves the admin HTML file.
+ * Ensure 'admin.html' is in the same directory as 'server.js', or within a 'public' folder if `express.static` is configured for it.
+ */
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+/**
+ * Root endpoint for general access or a landing page.
+ * Provides a simple welcome message.
+ */
+app.get('/', (req, res) => {
+    res.send('Welcome to MyMedia API! Go to /admin for the admin panel.');
 });
 
 // Start the server
