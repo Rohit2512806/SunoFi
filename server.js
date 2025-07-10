@@ -11,10 +11,8 @@ const PORT = 3000;
 const MONGODB_URI = 'mongodb+srv://rohitpatel2512806:74Rohit58@cluster0.1uu3aet.mongodb.net/MusicData?retryWrites=true&w=majority&appName=Cluster0';
 
 // Connect to MongoDB
-mongoose.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
+mongoose.connect(MONGODB_URI)
+
 .then(() => console.log('MongoDB connected successfully'))
 .catch(err => console.error('MongoDB connection error:', err));
 
