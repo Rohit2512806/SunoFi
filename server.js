@@ -2,13 +2,13 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const path = require('path'); // path module is still needed for serving static files
+const path = require('path');
 
 const app = express();
 const PORT = 3000;
 
 // MongoDB Connection URI
-const MONGODB_URI = 'mongodb+srv://rohitpatel2512806:74Rohit58@cluster0.1uu3aet.mongodb.net/MusicData?retryWrites=true&w=majority&appName=Cluster0'; // Updated with your provided URL
+const MONGODB_URI = 'mongodb+srv://rohitpatel2512806:74Rohit58@cluster0.1uu3aet.mongodb.net/MusicData?retryWrites=true&w=majority&appName=Cluster0';
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI, {
@@ -18,22 +18,22 @@ mongoose.connect(MONGODB_URI, {
 .then(() => console.log('MongoDB connected successfully'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-// Define Mongoose Schemas and Models
+// --- Define Mongoose Schemas and Models (Updated) ---
 const songSchema = new mongoose.Schema({
     id: { type: String, unique: true, required: true },
     title: String,
     artist: String,
-    album: String,
-    genre: String,
-    duration: String,
-    // Add other fields as per your song structure
+    album: String,    // Optional: Add if you want to store album
+    genre: String,    // Optional: Add if you want to store genre
+    duration: String, // Optional: Add if you want to store duration
+    url: String,      // <--- ADDED: This is crucial for storing the song URL
 });
 
 const artistSchema = new mongoose.Schema({
     name: { type: String, unique: true, required: true },
-    genre: String,
-    bio: String,
-    // Add other fields as per your artist structure
+    image: String,    // <--- ADDED: This is crucial for storing the artist image URL
+    genre: String,    // Optional: Add if you want to store genre
+    bio: String,      // Optional: Add if you want to store bio
 });
 
 const Song = mongoose.model('Song', songSchema);
