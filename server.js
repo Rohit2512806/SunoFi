@@ -1,138 +1,169 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors'); // Import cors
-const fs = require('fs');
-const path = require('path');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const path = require('path'); // path module is still needed for serving static files
 
 const app = express();
-const PORT = 3000; // You can choose any available port
+const PORT = 3000;
 
-const DATA_FILE = path.join(__dirname, 'songs.json');
+// MongoDB Connection URI
+const MONGODB_URI = 'mongodb+srv://rohitpatel2512806:74Rohit58@cluster0.1uu3aet.mongodb.net/MusicData?retryWrites=true&w=majority&appName=Cluster0'; // Updated with your provided URL
+
+// Connect to MongoDB
+mongoose.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => console.log('MongoDB connected successfully'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+// Define Mongoose Schemas and Models
+const songSchema = new mongoose.Schema({
+    id: { type: String, unique: true, required: true },
+    title: String,
+    artist: String,
+    album: String,
+    genre: String,
+    duration: String,
+    // Add other fields as per your song structure
+});
+
+const artistSchema = new mongoose.Schema({
+    name: { type: String, unique: true, required: true },
+    genre: String,
+    bio: String,
+    // Add other fields as per your artist structure
+});
+
+const Song = mongoose.model('Song', songSchema);
+const Artist = mongoose.model('Artist', artistSchema);
 
 // Middleware
-app.use(cors()); // Enable CORS for all routes
+app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '.'))); // Serve static files (like admin.html)
-
-// Helper function to read data
-function readData() {
-    try {
-        const data = fs.readFileSync(DATA_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error reading data file:', error);
-        return { songs: [], artists: [] }; // Return default empty structure if file is missing or corrupted
-    }
-}
-
-// Helper function to write data
-function writeData(data) {
-    try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 4), 'utf8');
-    } catch (error) {
-        console.error('Error writing data file:', error);
-    }
-}
+app.use(express.static(path.join(__dirname, '.')));
 
 // --- API Endpoints ---
 
 // GET all data (songs and artists)
-app.get('/api/data', (req, res) => {
-    const data = readData();
-    res.json(data);
+app.get('/api/data', async (req, res) => {
+    try {
+        const songs = await Song.find();
+        const artists = await Artist.find();
+        res.json({ songs, artists });
+    } catch (error) {
+        console.error('Error fetching data from MongoDB:', error);
+        res.status(500).json({ message: 'Error fetching data.' });
+    }
 });
 
 // ADD a new song
-app.post('/api/add-song', (req, res) => {
-    const newSong = req.body;
-    const data = readData();
-    newSong.id = `song${data.songs.length + 1}`; // Simple ID generation
-    data.songs.push(newSong);
-    writeData(data);
-    res.status(201).json(newSong);
+app.post('/api/add-song', async (req, res) => {
+    try {
+        const newSongData = req.body;
+        // Generate a simple ID if not provided, or use a more robust method
+        newSongData.id = newSongData.id || `song${Date.now()}`;
+        const newSong = new Song(newSongData);
+        await newSong.save();
+        res.status(201).json(newSong);
+    } catch (error) {
+        console.error('Error adding song to MongoDB:', error);
+        res.status(500).json({ message: 'Error adding song.', error: error.message });
+    }
 });
 
 // ADD a new artist
-app.post('/api/add-artist', (req, res) => {
-    const newArtist = req.body;
-    const data = readData();
-    // Check if artist already exists to prevent duplicates
-    if (!data.artists.some(artist => artist.name === newArtist.name)) {
-        data.artists.push(newArtist);
-        writeData(data);
+app.post('/api/add-artist', async (req, res) => {
+    try {
+        const newArtistData = req.body;
+        // Check if artist already exists
+        const existingArtist = await Artist.findOne({ name: newArtistData.name });
+        if (existingArtist) {
+            return res.status(409).json({ message: 'Artist already exists.' });
+        }
+        const newArtist = new Artist(newArtistData);
+        await newArtist.save();
         res.status(201).json(newArtist);
-    } else {
-        res.status(409).json({ message: 'Artist already exists.' });
+    } catch (error) {
+        console.error('Error adding artist to MongoDB:', error);
+        res.status(500).json({ message: 'Error adding artist.', error: error.message });
     }
 });
 
 // UPDATE a song
-app.put('/api/update-song/:id', (req, res) => {
-    const songId = req.params.id;
-    const updatedSong = req.body;
-    const data = readData();
-    const index = data.songs.findIndex(s => s.id === songId);
-    if (index !== -1) {
-        data.songs[index] = { ...data.songs[index], ...updatedSong, id: songId }; // Preserve ID
-        writeData(data);
-        res.json(data.songs[index]);
-    } else {
-        res.status(404).json({ message: 'Song not found.' });
+app.put('/api/update-song/:id', async (req, res) => {
+    try {
+        const songId = req.params.id;
+        const updatedSongData = req.body;
+        const updatedSong = await Song.findOneAndUpdate({ id: songId }, updatedSongData, { new: true });
+        if (updatedSong) {
+            res.json(updatedSong);
+        } else {
+            res.status(404).json({ message: 'Song not found.' });
+        }
+    } catch (error) {
+        console.error('Error updating song in MongoDB:', error);
+        res.status(500).json({ message: 'Error updating song.', error: error.message });
     }
 });
 
 // UPDATE an artist
-app.put('/api/update-artist/:name', (req, res) => {
-    const artistName = req.params.name;
-    const updatedArtist = req.body;
-    const data = readData();
-    const index = data.artists.findIndex(a => a.name === artistName);
-    if (index !== -1) {
-        data.artists[index] = { ...data.artists[index], ...updatedArtist, name: artistName }; // Preserve name
-        writeData(data);
-        res.json(data.artists[index]);
-    } else {
-        res.status(404).json({ message: 'Artist not found.' });
+app.put('/api/update-artist/:name', async (req, res) => {
+    try {
+        const artistName = req.params.name;
+        const updatedArtistData = req.body;
+        const updatedArtist = await Artist.findOneAndUpdate({ name: artistName }, updatedArtistData, { new: true });
+        if (updatedArtist) {
+            res.json(updatedArtist);
+        } else {
+            res.status(404).json({ message: 'Artist not found.' });
+        }
+    } catch (error) {
+        console.error('Error updating artist in MongoDB:', error);
+        res.status(500).json({ message: 'Error updating artist.', error: error.message });
     }
 });
 
 // DELETE a song
-app.delete('/api/delete-song/:id', (req, res) => {
-    const songId = req.params.id;
-    const data = readData();
-    const initialLength = data.songs.length;
-    data.songs = data.songs.filter(s => s.id !== songId);
-    if (data.songs.length < initialLength) {
-        writeData(data);
-        res.status(204).send(); // No Content
-    } else {
-        res.status(404).json({ message: 'Song not found.' });
+app.delete('/api/delete-song/:id', async (req, res) => {
+    try {
+        const songId = req.params.id;
+        const result = await Song.deleteOne({ id: songId });
+        if (result.deletedCount > 0) {
+            res.status(204).send(); // No Content
+        } else {
+            res.status(404).json({ message: 'Song not found.' });
+        }
+    } catch (error) {
+        console.error('Error deleting song from MongoDB:', error);
+        res.status(500).json({ message: 'Error deleting song.', error: error.message });
     }
 });
 
-// DELETE an artist (careful: this won't update songs using this artist)
-app.delete('/api/delete-artist/:name', (req, res) => {
-    const artistName = req.params.name;
-    const data = readData();
-    const initialLength = data.artists.length;
-    data.artists = data.artists.filter(a => a.name !== artistName);
-    if (data.artists.length < initialLength) {
-        writeData(data);
-        res.status(204).send(); // No Content
-    } else {
-        res.status(404).json({ message: 'Artist not found.' });
+// DELETE an artist
+app.delete('/api/delete-artist/:name', async (req, res) => {
+    try {
+        const artistName = req.params.name;
+        const result = await Artist.deleteOne({ name: artistName });
+        if (result.deletedCount > 0) {
+            res.status(204).send(); // No Content
+        } else {
+            res.status(404).json({ message: 'Artist not found.' });
+        }
+    } catch (error) {
+        console.error('Error deleting artist from MongoDB:', error);
+        res.status(500).json({ message: 'Error deleting artist.', error: error.message });
     }
 });
-
 
 // Serve the admin HTML file
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
-
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server running on https://sunofi.onrender.com:${PORT}`);
-    console.log(`Admin Panel available at https://sunofi.onrender.com:${PORT}/admin`);
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Admin Panel available at http://localhost:${PORT}/admin`);
 });
