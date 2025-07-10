@@ -254,7 +254,6 @@
                 alert('Song deleted successfully!');
                 fetchData(); // Refresh lists
             } catch (error) {
-                console.error('Error deleting song:', error);
                 alert('Error deleting song. See console for details.');
             }
         }
@@ -269,7 +268,6 @@
                 alert('Artist deleted successfully!');
                 fetchData(); // Refresh lists
             } catch (error) {
-                console.error('Error deleting artist:', error);
                 alert('Error deleting artist. See console for details.');
             }
         }
@@ -355,7 +353,6 @@
                                 alert('Song updated successfully!');
                                 fetchData();
                             } catch (error) {
-                                console.error('Error updating song:', error);
                                 alert('Error updating song. See console for details.');
                             }
                         }
@@ -384,7 +381,6 @@
                                 alert('Artist updated successfully!');
                                 fetchData();
                             } catch (error) {
-                                console.error('Error updating artist:', error);
                                 alert('Error updating artist. See console for details.');
                             }
                         }
