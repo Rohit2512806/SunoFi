@@ -93,12 +93,33 @@ app.post('/api/add-artist', async (req, res) => {
 app.put('/api/update-song/:id', async (req, res) => {
     try {
         const songId = req.params.id;
-        const updatedSongData = req.body;
-        const updatedSong = await Song.findOneAndUpdate({ id: songId }, updatedSongData, { new: true });
+        const { title, artist, url } = req.body; // request body से title, artist, url निकालें
+
+        // एक ऑब्जेक्ट बनाएं जिसमें अपडेट करने के लिए फ़ील्ड्स हों
+        const updateFields = {};
+
+        // केवल तभी फ़ील्ड्स को जोड़ें यदि वे रिक्वेस्ट बॉडी में मौजूद हों
+        if (title !== undefined) {
+            updateFields.title = title;
+        }
+        if (artist !== undefined) {
+            updateFields.artist = artist;
+        }
+        if (url !== undefined) { // यह सुनिश्चित करता है कि URL को अपडेट/जोड़ा जाए
+            updateFields.url = url;
+        }
+
+        // $set ऑपरेटर का उपयोग करके स्पष्ट रूप से फ़ील्ड्स को अपडेट/जोड़ें
+        const updatedSong = await Song.findOneAndUpdate(
+            { id: songId }, // गाने को उसके id से ढूंढें
+            { $set: updateFields }, // updateFields में दिए गए फ़ील्ड्स को सेट करें
+            { new: true } // अपडेटेड दस्तावेज़ वापस करें
+        );
+
         if (updatedSong) {
-            res.json(updatedSong);
+            res.json(updatedSong); // अपडेटेड गाना वापस भेजें
         } else {
-            res.status(404).json({ message: 'Song not found.' });
+            res.status(404).json({ message: 'Song not found.' }); // अगर गाना नहीं मिला तो 404
         }
     } catch (error) {
         console.error('Error updating song in MongoDB:', error);
